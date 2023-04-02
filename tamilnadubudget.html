@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title></title>
+    <style>
+      @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@200;300;400&display=swap');
+      p, span {
+        font-family: 'Oswald', sans-serif;
+        text-align: center;
+        margin: auto;
+      }
+      span {
+        display: block;
+        font-size: 1.2rem;
+      }
+      .topicTitle {
+        font-size: 2rem;
+        margin-bottom: 0;
+        padding: 0;
+      }
+
+      .challengeDescription {
+        font-size: 1.4rem;
+        margin-top: 0;
+        margin-bottom: 0;
+      }
+      body {
+        background-color: rgb(255, 255, 255);
+      }
+      .svgContainer {
+        margin: 1rem;
+      }
+      svg {
+        display: block;
+        margin: auto;
+      }
+
+      text {
+        font-family: 'Oswald', sans-serif;
+      }
+      
+      .treemapTitle {
+        font-size: 1.3rem;
+        font-weight: bold;
+      }
+
+      .dept_crore {
+        font-size: 0.88rem;
+      }
+
+      circle:hover{
+        cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div>
+      <p class="topicTitle">Tamil Nadu State Budget - Agriculture And Farmer's Welfare Department</p>
+      <p class="challengeDescription">Week 1: Comparisons. Day1: Part to Whole.</p>
+      <span>#30DayChartChallenge2023</span>
+      <span>Data Source: <a href="https://financedept.tn.gov.in/demands_ex.html">Tamil Nadu Finance Department</a></span>
+      <p style="width: 700px; margin-top: 10px;">A treemap visualizing Tamil Nadu's budget for the year 2023 and comparison with budget estimates of previous year 2022 and 2021. Hover over the smaller circles for department name and respective budget in rupee value.</p>
+    </div>
+    <div class="svgContainer">
+      <svg id="treemap2021" width="950" height="700"></svg>
+    </div>
+    <div class="svgContainer">
+      <svg id="treemap2022" width="950" height="700"></svg>
+    </div>
+    <div class="svgContainer">
+      <svg id="treemap2023" width="950" height="700"></svg>
+    </div>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script>
+        const margin = { top: 50, left: 50, bottom: 50, right: 50 }
+        function formatRupees(number) {
+          const crore = 10000000;
+          const lakh = 100000;
+
+          if (number >= crore) {
+            return (number / crore).toLocaleString('en-IN', {maximumFractionDigits: 2}) + ' CR';
+          }
+          if (number >= lakh) {
+            return (number / lakh).toLocaleString('en-IN', {maximumFractionDigits: 2}) + ' L';
+          }
+          return number.toLocaleString('en-IN');
+        }
+
+
+        d3.csv("data/TN_Agriculture_And_Farmers_Welfare_Department_Budget.csv",function(d){
+          return{
+            head_of_department_code: d.head_of_department_code,
+            head_of_account_description: d.head_of_account_description,
+            detail_head: d.detail_head,
+            detail_head_description: d.detail_head_description,
+            year: d.year,
+            value_in_rupee: +d.value*1000,
+            value_in_dollar: +(+d.value*1000/82.18).toFixed(2),
+            value: +d.value
+          }
+        }).then(function(data){
+          const budgetYearGroup = d3.group(data, d => d.year)
+          
+
+          const createTreemap2023 = (data, treemapTranslateX, treemapTranslateY, treemapFillColor) => {
+            const svg = d3.select("#treemap2021")
+                      .append("g")
+                      .attr("transform",`translate(${margin.left},${margin.top})`)
+
+            
+
+            const budgetDepartmentGroup = d3.group(data, d=>d.head_of_department_code);
+            const hierarchy = d3.hierarchy(budgetDepartmentGroup).sum(d => d.value).sort((a, b) => b.value - a.value)
+            const treemapLayoutType = d3.treemapBinary;
+            const treeMapLayout = d3.treemap().size([800, 550]);
+            treeMapLayout.tile(treemapLayoutType);
+            treeMapLayout(hierarchy);
+
+            const totalBudgetForTheYear = formatRupees((hierarchy.value)*1000)
+
+            const circleGroupPlacement = (circleGroupData, circleGroupIndex) => {
+              if (circleGroupIndex === 0) {
+                return `translate(50,150)`
+              }
+              if (circleGroupIndex === 1) {
+                return `translate(65,30)`
+              }
+              if (circleGroupIndex === 2) {
+                return `translate(35,30)`
+              }
+              if (circleGroupIndex === 3) {
+                return `translate(55,30)`
+              }
+              if (circleGroupIndex === 4) {
+                return `translate(15,30)`
+              }
+              if (circleGroupIndex === 5) {
+                return `translate(15,30)`
+              }
+              if (circleGroupIndex === 6) {
+                return `translate(-700,65)`
+              }
+              if (circleGroupIndex === 7) {
+                return `translate(-600,65)`
+              }
+              if (circleGroupIndex === 8) {
+                return `translate(-500,42)`
+              }
+              if (circleGroupIndex === 9) {
+                return `translate(-400,42)`
+              } 
+            }
+
+            const circlePlacementX = (circleData, circleIndex) => {
+              if (circleData.data.head_of_department_code === "502") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 450]);
+                return circleScale(Math.floor(circleIndex/20)*2)
+              }
+              if (circleData.data.head_of_department_code === "505") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 400]);
+                return circleScale(Math.floor(circleIndex/20)*2.15)
+              }
+              if (circleData.data.head_of_department_code === "506") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 400]);
+                return circleScale(Math.floor(circleIndex/15)*2.2)
+              }
+              if (circleData.data.head_of_department_code === "508") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 400]);
+                return circleScale(Math.floor(circleIndex/5)*2.2)
+              }
+              if (circleData.data.head_of_department_code === "503") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 220]);
+                return circleScale(Math.floor(circleIndex/10)*2)
+              }
+              if (circleData.data.head_of_department_code === "510") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex/5)*2)
+              }
+              if (circleData.data.head_of_department_code === "504") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex/5)*2)
+              }
+              if (circleData.data.head_of_department_code === "501") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex/5)*2)
+              }
+              if (circleData.data.head_of_department_code === "509") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex/5)*2)
+              }
+              if (circleData.data.head_of_department_code === "507") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex/5)*2)
+              } 
+            }
+
+            const circlePlacementY = (circleData, circleIndex) => {
+              if (circleData.data.head_of_department_code === "502") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 700]);
+                return circleScale(Math.floor(circleIndex%20*2))
+              }
+              if (circleData.data.head_of_department_code === "505") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 400]);
+                return circleScale(Math.floor(circleIndex%20*2.15))
+              }
+              if (circleData.data.head_of_department_code === "506") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 280]);
+                return circleScale(Math.floor(circleIndex%15*2.35))
+              }
+              if (circleData.data.head_of_department_code === "508") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 280]);
+                return circleScale(Math.floor(circleIndex%5*2.35))
+              }
+              if (circleData.data.head_of_department_code === "503") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 280]);
+                return circleScale(Math.floor(circleIndex%10*2))
+              }
+              if (circleData.data.head_of_department_code === "510") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex%5*2))
+              }
+              if (circleData.data.head_of_department_code === "504") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex%5*2))
+              }
+              if (circleData.data.head_of_department_code === "501") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex%5*2))
+              }
+              if (circleData.data.head_of_department_code === "509") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex%5*2))
+              }
+              if (circleData.data.head_of_department_code === "507") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex%5*2))
+              } 
+            }
+
+            svg.append("text")
+            .attr("class","treemapTitle")
+            .attr("x", 0)
+            .attr("y", -15)
+            .text(`Year : 2023 - 2024  ( Budget Estimate - ${totalBudgetForTheYear} )`)
+            .attr("fill", treemapFillColor)
+
+            const treemapGroup1 = svg
+            .append("g")
+            .attr("transform", `translate(0,0)`)
+
+
+            const deptGroup = treemapGroup1
+              .selectAll("g")
+              .data(hierarchy.children)
+              .join("g")
+              .attr("class",d=>d.data[0])
+              .attr("transform", (d) => `translate(${d.x0}, ${d.y0})`)
+              
+              deptGroup.append("rect")
+              .attr("class",d=>`rect_${d.data[0]}`)
+              .attr("width", (d) => d.x1 - d.x0)
+              .attr("height", (d) => d.y1 - d.y0)
+              .attr("fill", treemapFillColor)
+              .style("stroke","white")
+              
+              deptGroup.append("text")
+              .attr("class","dept_crore")
+              .attr("x", d=> 
+                d.data[0] ==="504" ? -704 : 
+                d.data[0] ==="501" ? -604 : 
+                d.data[0] ==="509" ? -504 : 
+                d.data[0] ==="507" ? -404 : 3)
+              .attr("y", d=> 
+                d.data[0] ==="504" ? 55 : 
+                d.data[0] ==="501" ? 55 : 
+                d.data[0] ==="509" ? 32 : 
+                d.data[0] ==="507" ? 32 : 20)
+              .attr("fill", d=> 
+                d.data[0] ==="504" ? treemapFillColor : 
+                d.data[0] ==="501" ? treemapFillColor : 
+                d.data[0] ==="509" ? treemapFillColor : 
+                d.data[0] ==="507" ? treemapFillColor : 'white')
+              .text(d => `${d.data[0]} - ₹${formatRupees(d.value*1000)}`)
+
+              deptGroup.append("g")
+              .attr("transform", (d,i)=> circleGroupPlacement(d,i))
+              .selectAll("circle")
+              .data(d=>d.children)
+              .join("circle")
+              .attr("class","circles_2023")
+              .attr("cx", (d,i)=>circlePlacementX(d,i))
+              .attr("cy",(d,i)=> circlePlacementY(d,i))
+              .attr("r", 2.4)
+              .attr("fill", d=> 
+                d.data.head_of_department_code ==="504" ? treemapFillColor : 
+                d.data.head_of_department_code ==="501" ? treemapFillColor : 
+                d.data.head_of_department_code ==="509" ? treemapFillColor : 
+                d.data.head_of_department_code ==="507" ? treemapFillColor : 'white')
+                .on("mouseover", (event,d) => {
+                d3.selectAll(".circles_2023").attr("r",1)
+                d3.select(event.target).attr("r",5)
+                const tooltipGroup = svg.append("g").attr("class","tooltipGroup")
+                tooltipGroup.append("rect")
+                .attr("x",0)
+                .attr("y",0)
+                .attr("width",200)
+                .attr("height",55)
+                .attr("fill","white")
+                tooltipGroup.append("text")
+                .attr("x",10)
+                .attr("y",25)
+                .style("fill",treemapFillColor)
+                .style("text-anchor","start")
+                .text(d.data.detail_head_description)
+                tooltipGroup.append("text")
+                .attr("x",10)
+                .attr("y",45)
+                .style("fill",treemapFillColor)
+                .style("text-anchor","start")
+                .text(`₹${formatRupees(d.data.value*1000)}`)
+              })
+              .on("mousemove", (event,d) => {
+                d3.selectAll(".circles_2023").attr("r",1)
+                d3.select(event.target).attr("r",5)
+                d3.selectAll(".tooltipGroup")
+                .attr("transform",`translate(${event.offsetX-30}, ${event.offsetY-110})`)
+                
+              })
+              .on("mouseout", (event,d) => {
+                d3.selectAll(`.tooltipGroup`).remove()
+                d3.selectAll(".circles_2023").attr("r",2.4)
+              })
+
+              const arrowPath = svg.append("g")
+                .attr("transform","translate(650,515) rotate(20)")
+                .attr("class", "arrow")
+                .attr("stroke",treemapFillColor)
+                arrowPath.append("path")
+                .attr("d","M125.565 0.253754C110.001 27.7571 95.5942 46.2652 76.7918 59.1743C58.1752 71.9558 35.201 79.2817 2.41538 84.3536L7.38598 78.3179L6.61405 77.6822L0.614053 84.9679L0.288818 85.3628L0.691108 85.6789L6.69111 90.3932L7.30893 89.6068L1.99343 85.4304C35.1488 80.3455 58.4535 72.9778 77.3578 59.9987C96.3424 46.9645 110.84 28.3048 126.435 0.746261L125.565 0.253754Z")
+                
+          }
+
+          const createTreemap2022 = (data, treemapTranslateX, treemapTranslateY, treemapFillColor) => {
+            const svg = d3.select("#treemap2022")
+                      .append("g")
+                      .attr("transform",`translate(${margin.left},${margin.top})`)
+
+            const budgetDepartmentGroup = d3.group(data, d=>d.head_of_department_code);
+            const hierarchy = d3.hierarchy(budgetDepartmentGroup).sum(d => d.value).sort((a, b) => b.value - a.value)
+            const treemapLayoutType = d3.treemapBinary;
+            const treeMapLayout = d3.treemap().size([800, 550]);
+            treeMapLayout.tile(treemapLayoutType);
+            treeMapLayout(hierarchy);
+
+            const totalBudgetForTheYear = formatRupees((hierarchy.value)*1000)
+
+            const circleGroupPlacement = (circleGroupData, circleGroupIndex) => {
+              if (circleGroupIndex === 0) {
+                return `translate(50,150)`
+              }
+              if (circleGroupIndex === 1) {
+                return `translate(65,30)`
+              }
+              if (circleGroupIndex === 2) {
+                return `translate(55,30)`
+              }
+              if (circleGroupIndex === 3) {
+                return `translate(55,30)`
+              }
+              if (circleGroupIndex === 4) {
+                return `translate(15,30)`
+              }
+              if (circleGroupIndex === 5) {
+                return `translate(-690,65)`
+              }
+              if (circleGroupIndex === 6) {
+                return `translate(-600,65)`
+              }
+              if (circleGroupIndex === 7) {
+                return `translate(-500,65)`
+              }
+              if (circleGroupIndex === 8) {
+                return `translate(-400,45)`
+              }
+              if (circleGroupIndex === 9) {
+                return `translate(-300,45)`
+              } 
+            }
+
+            const circlePlacementX = (circleData, circleIndex) => {
+              if (circleData.data.head_of_department_code === "502") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 400]);
+                return circleScale(Math.floor(circleIndex/20)*2)
+              }
+              if (circleData.data.head_of_department_code === "505") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 400]);
+                return circleScale(Math.floor(circleIndex/20)*2.15)
+              }
+              if (circleData.data.head_of_department_code === "506") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 400]);
+                return circleScale(Math.floor(circleIndex/15)*2.2)
+              }
+              if (circleData.data.head_of_department_code === "508") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 400]);
+                return circleScale(Math.floor(circleIndex/5)*2.2)
+              }
+              if (circleData.data.head_of_department_code === "503") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 240]);
+                return circleScale(Math.floor(circleIndex/10)*2)
+              }
+              if (circleData.data.head_of_department_code === "504") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex/5)*2)
+              }
+              if (circleData.data.head_of_department_code === "501") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex/5)*2)
+              }
+              if (circleData.data.head_of_department_code === "510") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex/5)*2)
+              }
+              if (circleData.data.head_of_department_code === "509") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex/5)*2)
+              }
+              if (circleData.data.head_of_department_code === "507") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex/5)*2)
+              } 
+            }
+
+            const circlePlacementY = (circleData, circleIndex) => {
+              if (circleData.data.head_of_department_code === "502") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 700]);
+                return circleScale(Math.floor(circleIndex%20*2))
+              }
+              if (circleData.data.head_of_department_code === "505") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 400]);
+                return circleScale(Math.floor(circleIndex%20*2.15))
+              }
+              if (circleData.data.head_of_department_code === "506") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 280]);
+                return circleScale(Math.floor(circleIndex%15*2.35))
+              }
+              if (circleData.data.head_of_department_code === "508") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 280]);
+                return circleScale(Math.floor(circleIndex%5*2.35))
+              }
+              if (circleData.data.head_of_department_code === "503") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 360]);
+                return circleScale(Math.floor(circleIndex%10*2))
+              }
+              if (circleData.data.head_of_department_code === "504") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex%5*2))
+              }
+              if (circleData.data.head_of_department_code === "501") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex%5*2))
+              }
+              if (circleData.data.head_of_department_code === "510") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex%5*2))
+              }
+              if (circleData.data.head_of_department_code === "509") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex%5*2))
+              }
+              if (circleData.data.head_of_department_code === "507") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex%5*2))
+              } 
+            }
+
+             svg.append("text")
+            .attr("class","treemapTitle")
+            .attr("x", 0)
+            .attr("y", -15)
+            .text(`Year : 2022 - 2023  ( Budget Estimate - ${totalBudgetForTheYear} )`)
+            .attr("fill", treemapFillColor)
+
+            const treemapGroup1 = svg
+            .append("g")
+            .attr("transform", `translate(0,0)`)
+
+
+            const deptGroup = treemapGroup1
+              .selectAll("g")
+              .data(hierarchy.children)
+              .join("g")
+              .attr("class",d=>d.data[0])
+              .attr("transform", (d) => `translate(${d.x0}, ${d.y0})`)
+              
+              deptGroup.append("rect")
+              .attr("class",d=>`rect_${d.data[0]}`)
+              .attr("width", (d) => d.x1 - d.x0)
+              .attr("height", (d) => d.y1 - d.y0)
+              .attr("fill", treemapFillColor)
+              .style("stroke","white")
+
+              deptGroup.append("text")
+              .attr("class","dept_crore")
+              .attr("x", d=> 
+              d.data[0] ==="504" ? -694 : 
+              d.data[0] ==="501" ? -604 : 
+              d.data[0] ==="510" ? -504 : 
+              d.data[0] ==="509" ? -404 : 
+              d.data[0] ==="507" ? -304 : 3)
+              .attr("y", d=> 
+              d.data[0] ==="504" ? 55 : 
+              d.data[0] ==="501" ? 55 : 
+              d.data[0] ==="510" ? 55 : 
+              d.data[0] ==="509" ? 34 :  
+              d.data[0] ==="507" ? 34 : 20)
+              .attr("fill", d=>
+              d.data[0] ==="504" ? treemapFillColor : 
+              d.data[0] ==="501" ? treemapFillColor : 
+              d.data[0] ==="510" ? treemapFillColor : 
+              d.data[0] ==="509" ? treemapFillColor :  
+              d.data[0] ==="507" ? treemapFillColor : 'white')
+              .text(d => `${d.data[0]} - ₹${formatRupees(d.value*1000)}`)
+
+              deptGroup.append("g")
+              .attr("transform", (d,i)=> circleGroupPlacement(d,i))
+              .selectAll("circle")
+              .data(d=>d.children)
+              .join("circle")
+              .attr("class","circles_2022")
+              .attr("cx", (d,i)=>circlePlacementX(d,i))
+              .attr("cy",(d,i)=> circlePlacementY(d,i))
+              .attr("r", 2.4)
+              .attr("fill", d=>
+              d.data.head_of_department_code ==="504" ? treemapFillColor : 
+              d.data.head_of_department_code ==="501" ? treemapFillColor : 
+              d.data.head_of_department_code ==="510" ? treemapFillColor : 
+              d.data.head_of_department_code ==="509" ? treemapFillColor :  
+              d.data.head_of_department_code ==="507" ? treemapFillColor : 'white')
+              .on("mouseover", (event,d) => {
+                d3.selectAll(".circles_2022").attr("r",1)
+                d3.select(event.target).attr("r",5)
+                const tooltipGroup = svg.append("g").attr("class","tooltipGroup")
+                tooltipGroup.append("rect")
+                .attr("x",0)
+                .attr("y",0)
+                .attr("width",200)
+                .attr("height",55)
+                .attr("fill","white")
+                tooltipGroup.append("text")
+                .attr("x",10)
+                .attr("y",25)
+                .style("fill",treemapFillColor)
+                .style("text-anchor","start")
+                .text(d.data.detail_head_description)
+                tooltipGroup.append("text")
+                .attr("x",10)
+                .attr("y",45)
+                .style("fill",treemapFillColor)
+                .style("text-anchor","start")
+                .text(`₹${formatRupees(d.data.value*1000)}`)
+              })
+              .on("mousemove", (event,d) => {
+                d3.selectAll(".circles_2022").attr("r",1)
+                d3.select(event.target).attr("r",5)
+                d3.selectAll(".tooltipGroup")
+                .attr("transform",`translate(${event.offsetX-30}, ${event.offsetY-110})`)
+                
+              })
+              .on("mouseout", (event,d) => {
+                d3.selectAll(`.tooltipGroup`).remove()
+                d3.selectAll(".circles_2022").attr("r",2.4)
+              })
+
+              svg.append("g")
+                .attr("transform","translate(650,515) rotate(20)")
+                .append("path")
+                .attr("class", "arrow")
+                .attr("d","M125.565 0.253754C110.001 27.7571 95.5942 46.2652 76.7918 59.1743C58.1752 71.9558 35.201 79.2817 2.41538 84.3536L7.38598 78.3179L6.61405 77.6822L0.614053 84.9679L0.288818 85.3628L0.691108 85.6789L6.69111 90.3932L7.30893 89.6068L1.99343 85.4304C35.1488 80.3455 58.4535 72.9778 77.3578 59.9987C96.3424 46.9645 110.84 28.3048 126.435 0.746261L125.565 0.253754Z")
+                .attr("stroke",treemapFillColor)
+          }
+
+          const createTreemap2021 = (data, treemapTranslateX, treemapTranslateY, treemapFillColor) => {
+            const svg = d3.select("#treemap2023")
+                      .append("g")
+                      .attr("transform",`translate(${margin.left},${margin.top})`)
+
+
+            const budgetDepartmentGroup = d3.group(data, d=>d.head_of_department_code);
+            const hierarchy = d3.hierarchy(budgetDepartmentGroup).sum(d => d.value).sort((a, b) => b.value - a.value)
+            const treemapLayoutType = d3.treemapBinary;
+            const treeMapLayout = d3.treemap().size([800, 550]);
+            treeMapLayout.tile(treemapLayoutType);
+            treeMapLayout(hierarchy);
+
+
+            const totalBudgetForTheYear = formatRupees((hierarchy.value)*1000)
+
+            const circleGroupPlacement = (circleGroupData, circleGroupIndex) => {
+              if (circleGroupIndex === 0) {
+                return `translate(50,150)`
+              }
+              if (circleGroupIndex === 1) {
+                return `translate(15,40)`
+              }
+              if (circleGroupIndex === 2) {
+                return `translate(15,35)`
+              }
+              if (circleGroupIndex === 3) {
+                return `translate(15,35)`
+              }
+              if (circleGroupIndex === 4) {
+                return `translate(15,30)`
+              }
+              if (circleGroupIndex === 5) {
+                return `translate(-767,135)`
+              }
+              if (circleGroupIndex === 6) {
+                return `translate(-595,65)`
+              }
+              if (circleGroupIndex === 7) {
+                return `translate(-480,65)`
+              }
+              if (circleGroupIndex === 8) {
+                return `translate(-350,50)`
+              }
+              if (circleGroupIndex === 9) {
+                return `translate(-200,41)`
+              } 
+            }
+//
+            const circlePlacementX = (circleData, circleIndex) => {
+              if (circleData.data.head_of_department_code === "502") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 400]);
+                return circleScale(Math.floor(circleIndex/20)*2)
+              }
+              if (circleData.data.head_of_department_code === "505") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 400]);
+                return circleScale(Math.floor(circleIndex/20)*2.15)
+              }
+              if (circleData.data.head_of_department_code === "508") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 400]);
+                return circleScale(Math.floor(circleIndex/2)*2.2)
+              }
+              if (circleData.data.head_of_department_code === "503") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 300]);
+                return circleScale(Math.floor(circleIndex/10)*2.2)
+              }
+              if (circleData.data.head_of_department_code === "506") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 310]);
+                return circleScale(Math.floor(circleIndex/15)*2)
+              }
+              if (circleData.data.head_of_department_code === "504") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex/5)*2)
+              }
+              if (circleData.data.head_of_department_code === "501") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex/5)*2)
+              }
+              if (circleData.data.head_of_department_code === "509") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex/5)*2)
+              }
+              if (circleData.data.head_of_department_code === "507") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex/5)*2)
+              }
+              if (circleData.data.head_of_department_code === "510") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex/5)*2)
+              } 
+            }
+
+            const circlePlacementY = (circleData, circleIndex) => {
+              if (circleData.data.head_of_department_code === "502") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 700]);
+                return circleScale(Math.floor(circleIndex%20*2))
+              }
+              if (circleData.data.head_of_department_code === "505") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 400]);
+                return circleScale(Math.floor(circleIndex%20*2.15))
+              }
+              if (circleData.data.head_of_department_code === "508") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex%2*2.35))
+              }
+              if (circleData.data.head_of_department_code === "503") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 400]);
+                return circleScale(Math.floor(circleIndex%6*2.35))
+              }
+              if (circleData.data.head_of_department_code === "506") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 200]);
+                return circleScale(Math.floor(circleIndex%15*2))
+              }
+              if (circleData.data.head_of_department_code === "504") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex%5*2))
+              }
+              if (circleData.data.head_of_department_code === "501") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex%5*2))
+              }
+              if (circleData.data.head_of_department_code === "509") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex%5*2))
+              }
+              if (circleData.data.head_of_department_code === "507") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex%5*2))
+              }
+              if (circleData.data.head_of_department_code === "510") {
+                const circleScale = d3.scaleLinear().domain([0,100]).range([0, 350]);
+                return circleScale(Math.floor(circleIndex%5*2))
+              }
+            }
+
+             svg.append("text")
+            .attr("class","treemapTitle")
+            .attr("x", 0)
+            .attr("y", -15)
+            .text(`Year : 2021 - 2022  ( Budget Estimate - ${totalBudgetForTheYear} )`)
+            .attr("fill", treemapFillColor)
+
+            const treemapGroup1 = svg
+            .append("g")
+            .attr("transform", `translate(0,0)`)
+
+
+            const deptGroup = treemapGroup1
+              .selectAll("g")
+              .data(hierarchy.children)
+              .join("g")
+              .attr("class",d=>d.data[0])
+              .attr("transform", (d) => `translate(${d.x0}, ${d.y0})`)
+              
+              deptGroup.append("rect")
+              .attr("class",d=>`rect_${d.data[0]}`)
+              .attr("width", (d) => d.x1 - d.x0)
+              .attr("height", (d) => d.y1 - d.y0)
+              .attr("fill", treemapFillColor)
+              .style("stroke","white")
+
+              deptGroup.append("text")
+              .attr("class","dept_crore")
+              .attr("x", d=> 
+              d.data[0] ==="504" ? -770 : 
+              d.data[0] ==="501" ? -600 : 
+              d.data[0] ==="509" ? -484 : 
+              d.data[0] ==="507" ? -354 : 
+              d.data[0] ==="510" ? -204 : 3)
+              .attr("y", d=> 
+              d.data[0] ==="504" ? 125 : 
+              d.data[0] ==="501" ? 54 : 
+              d.data[0] ==="509" ? 54 : 
+              d.data[0] ==="507" ? 39 :  
+              d.data[0] ==="510" ? 31 : 20)
+              .attr("fill", d=>
+              d.data[0] ==="504" ? treemapFillColor : 
+              d.data[0] ==="501" ? treemapFillColor : 
+              d.data[0] ==="509" ? treemapFillColor : 
+              d.data[0] ==="507" ? treemapFillColor :  
+              d.data[0] ==="510" ? treemapFillColor : 'white')
+              .text(d => `${d.data[0]} - ₹${formatRupees(d.value*1000)}`)
+
+              deptGroup.append("g")
+              .attr("transform", (d,i)=> circleGroupPlacement(d,i))
+              .selectAll("circle")
+              .data(d=>d.children)
+              .join("circle")
+              .attr("class","circles_2021")
+              .attr("cx", (d,i)=>circlePlacementX(d,i))
+              .attr("cy",(d,i)=> circlePlacementY(d,i))
+              .attr("r", 2.4)
+              .style("fill", d=>
+              d.data.head_of_department_code ==="504" ? treemapFillColor : 
+              d.data.head_of_department_code ==="501" ? treemapFillColor : 
+              d.data.head_of_department_code ==="509" ? treemapFillColor : 
+              d.data.head_of_department_code ==="507" ? treemapFillColor :  
+              d.data.head_of_department_code ==="510" ? treemapFillColor : 'white')
+              .on("mouseover", (event,d) => {
+                d3.selectAll(".circles_2021").attr("r",1)
+                d3.select(event.target).attr("r",5)
+                const tooltipGroup = svg.append("g").attr("class","tooltipGroup")
+                tooltipGroup.append("rect")
+                .attr("x",0)
+                .attr("y",0)
+                .attr("width",200)
+                .attr("height",55)
+                .attr("fill","white")
+                tooltipGroup.append("text")
+                .attr("x",10)
+                .attr("y",25)
+                .style("fill",treemapFillColor)
+                .style("text-anchor","start")
+                .text(d.data.detail_head_description)
+                tooltipGroup.append("text")
+                .attr("x",10)
+                .attr("y",45)
+                .style("fill",treemapFillColor)
+                .style("text-anchor","start")
+                .text(`₹${formatRupees(d.data.value*1000)}`)
+              })
+              .on("mousemove", (event,d) => {
+                d3.selectAll(".circles_2021").attr("r",1)
+                d3.select(event.target).attr("r",5)
+                d3.selectAll(".tooltipGroup")
+                .attr("transform",`translate(${event.offsetX}, ${event.offsetY-100})`)
+                
+              })
+              .on("mouseout", (event,d) => {
+                d3.selectAll(`.tooltipGroup`).remove()
+                d3.selectAll(".circles_2021").attr("r",2.4)
+              })
+
+              svg.append("g")
+                .attr("transform","translate(750,520) rotate(-10)")
+                .append("path")
+                .attr("class", "arrow")
+                .attr("d","M62 0C62 25.7076 57.7229 43.8433 48.0893 56.6823C38.6 69.329 23.8491 76.9207 2.61352 81.4835L5.8143 76.1558L4.9571 75.6408L1.03617 82.1673L0.84259 82.4895L1.09836 82.765L5.01929 86.988L5.75212 86.3076L2.28709 82.5756C23.9276 78.0005 39.116 70.3075 48.8892 57.2825C58.7141 44.1884 63 25.7924 63 0H62Z")
+                .attr("stroke",treemapFillColor)
+          }
+
+          createTreemap2023(budgetYearGroup.get("2023-2024"), 0, 0, "rebeccaPurple")
+          createTreemap2022(budgetYearGroup.get("2022-2023"), 900, 0, "#f44336")
+          createTreemap2021(budgetYearGroup.get("2021-2022"), 500, 500, "#009688")
+        })
+    </script>
+  </body>
+</html>
