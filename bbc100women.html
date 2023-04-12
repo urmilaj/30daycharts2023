@@ -123,7 +123,6 @@
                       .attr("transform",`translate(${margin.left},${margin.top})`)
 
         const parseYear = d3.timeParse("%Y");
-        Promise.all([
         d3.csv("data/bbc_top_100.csv",function(d){
           return{
             year: parseYear(d.year),
@@ -135,27 +134,19 @@
             annotation_dx: +d.annotation_dx,
             annotation_dy: +d.annotation_dy   
           }
-        }),
-        d3.csv("data/bbc_country_count.csv",function(d){
-          return{
-            country_of_birth: d.country_of_birth,
-            count: +d.count         
-          }
-        })]).then(function(data){
-          console.log(data[0])
-          console.log(data[1])
+        }).then(function(data){
 
           d3.select("#selectButton")
-      .selectAll("options")
-      .data([...new Set(data[0].map(d=>d.country_of_birth))])
-      .join("option")
-      .text(d => d)
-      .attr("value", d => d);
+          .selectAll("options")
+          .data([...new Set(data.map(d=>d.country_of_birth))])
+          .join("option")
+          .text(d => d)
+          .attr("value", d => d);
 
          
 
-          const xScale = d3.scaleTime().domain(d3.extent(data[0], d=> d.year)).range([margin.left, width - margin.right]);
-          const yScale = d3.scaleBand().domain(data[0].map(d => d.count)).range([margin.top, height-margin.bottom]).padding(0.3);
+          const xScale = d3.scaleTime().domain(d3.extent(data, d=> d.year)).range([margin.left, width - margin.right]);
+          const yScale = d3.scaleBand().domain(data.map(d => d.count)).range([margin.top, height-margin.bottom]).padding(0.3);
         
 
 
@@ -179,7 +170,7 @@
 
         const circle = svg.append("g")
             .selectAll(".womenintop100")
-            .data(data[0])
+            .data(data)
             .join("circle")
             .attr("class","womenintop100")
             .attr("id", d=>d.name)
@@ -198,7 +189,7 @@
 
             const test = ['Vera Wang', 'Priyanka Chopra']
 
-          simulation.nodes(data[0])
+          simulation.nodes(data)
             .on("tick",(event,d) => circle.attr("cx", (d,i) => d.x).attr("cy", d => d.y))
             .on("end", tooltip)
 
@@ -237,7 +228,7 @@
         }])
 
           function tooltip(){         
-            let labels = data[0].filter(d => d.annotation_flag === 1).map((d,i)=>{
+            let labels = data.filter(d => d.annotation_flag === 1).map((d,i)=>{
             return{
             x:d.x,
             y:d.y,
